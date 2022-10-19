@@ -103,7 +103,6 @@ window.addEventListener('load', function () {
       this.markedForDeletion = false;
       this.lives = 5;
       this.score = this.lives;
-      this.died = [];
     }
     update() {
       this.x += this.speedX;
@@ -114,7 +113,7 @@ window.addEventListener('load', function () {
       context.fillRect(this.x, this.y, this.width, this.height);
       context.fillStyle = 'black';
       context.font = '20px Helvetica'
-      context.fillText(this.lives, this.x, this.y);
+      context.fillText(this.lives, this.x, this.y - 5);
     }
   }
 
@@ -135,14 +134,41 @@ window.addEventListener('load', function () {
     constructor(game) {
       this.game = game;
       this.fontSize = 25;
-      this.fontFamily = 'Helvetica';
-      this.color = 'yellow'
+      this.fontFamily = 'Luckiest Guy';
+      this.color = 'white'
     }
     draw(context) {
+      context.save();
+      context.font = `${this.fontSize}px ${this.fontFamily}`
+      context.fillStyle = this.color;
+      //score
+      context.fillText(`Score: ${this.game.score}`, 20, 40);
+      //ammo
       for (let i = 0; i < this.game.ammo; i++) {
-        context.fillStyle = this.color;
         context.fillRect(20 + 7 * i, 50, 3, 20);
       }
+
+      const remainingTime = this.game.timeLimit - this.game.gameTime;
+      const remainingTimeFixed = (remainingTime / 1000).toFixed(0);
+      //game time
+      context.fillText(`Time remaining: ${Math.abs(remainingTimeFixed)}s`, 20, 100)
+      //game over message
+      if (this.game.gameOver) {
+        context.textAlign = 'center';
+        let message1;
+        let message2;
+        if (this.game.score >= this.game.winningScore) {
+          message1 = 'You Win!';
+          message2 = 'Well Done';
+        } else {
+          message1 = 'You lose!';
+          message2 = 'Try again'
+        }
+        context.fillText(message2, canvas.width / 2, canvas.height / 2 + 30);
+        context.font = `50px ${this.fontFamily}`
+        context.fillText(message1, canvas.width / 2, canvas.height / 2 - 30);
+      }
+      context.restore();
     }
   }
 
@@ -162,9 +188,18 @@ window.addEventListener('load', function () {
       this.maxAmmo = 50;
       this.ammoTimer = 0;
       this.ammoInterval = 500;
+      this.score = 0;
+      this.winningScore = 10;
+      this.gameTime = 0;
+      this.timeLimit = 15000;
       this.gameOver = false;
     }
     update(deltaTime) {
+      //checking game time
+      if (!this.gameOver) this.gameTime += deltaTime;
+      let remainingTime = this.timeLimit - this.gameTime;
+      if (remainingTime < 0) this.gameOver = true;
+
       this.player.update();
 
       //recharg ammo after a period of time
@@ -188,7 +223,9 @@ window.addEventListener('load', function () {
             projectile.markedForDeletion = true;
             if (enemy.lives <= 0) {
               enemy.markedForDeletion = true;
-              this.score += enemy.score;
+              if (!this.gameOver) this.score += enemy.score;
+              //winning condition
+              if (this.score >= this.winningScore) this.gameOver = true;
             }
           }
         })
@@ -215,9 +252,12 @@ window.addEventListener('load', function () {
         enemy.draw(context)
       });
     }
+
+    //add new enemy to game
     addEnemy() {
       this.enemies.push(new Angler1(this));
     }
+
     checkCollision(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
