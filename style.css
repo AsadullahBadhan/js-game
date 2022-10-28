@@ -11,6 +11,15 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	max-width: 100%;
-	max-height: 100%;
-	background-color: #2377e6;
+}
+
+#layer1,
+#layer2,
+#layer3,
+#layer4,
+#player,
+#angler1,
+#angler2,
+#lucky {
+	display: none;
 }
